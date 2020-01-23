@@ -1,0 +1,7 @@
+fs buildpack(fs src) {
+	generate fs {
+		image "openllb/buildpack"
+	} with option {
+		frontendInput "context" src
+	}
+}

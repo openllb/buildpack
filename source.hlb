@@ -1,0 +1,29 @@
+fs src() {
+	git "https://github.com/openllb/buildpack.git" "5df822068d78562b386834a4d4e27320ba34d542"
+}
+
+fs goBuild(string package) {
+	image "golang:1.12-alpine" with option { resolve; }
+	run "apk add -U git gcc libc-dev"
+	env "GO111MODULE" "on"
+	dir "/src"
+	run string {
+		format "go build -o /out/binary -ldflags '-linkmode external -extldflags -static' -a %s" package
+	} with option {
+		mount src "/src"
+		mount fs { scratch; } "/out" as goBinary
+		mount fs { scratch; } "/root/.cache/go-build" with option {
+			cache "hlb/go-build" "shared"
+		}
+		mount fs { scratch; } "/go/pkg/mod" with option {
+			cache "hlb/go-mod" "shared"
+		}
+	}
+}
+
+fs frontend() {
+	scratch
+	copy fs { goBinary "./cmd/frontend"; } "/binary" "/run"
+	copy src "/source.hlb" "/"
+	copy src "/signature.hlb" "/"
+}
