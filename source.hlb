@@ -1,5 +1,5 @@
 fs src() {
-	git "https://github.com/openllb/buildpack.git" "5df822068d78562b386834a4d4e27320ba34d542"
+	git "https://github.com/openllb/buildpack.git" "master"
 }
 
 fs goBuild(string package) {

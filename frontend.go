@@ -2,12 +2,15 @@ package buildpack
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
 
 	"github.com/moby/buildkit/client/llb"
+	"github.com/moby/buildkit/exporter/containerimage/exptypes"
 	"github.com/moby/buildkit/frontend/gateway/client"
+	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
@@ -75,7 +78,23 @@ func Frontend(ctx context.Context, c client.Client) (*client.Result, error) {
 		return nil, err
 	}
 
-	return c.Solve(ctx, client.SolveRequest{
+	res, err = c.Solve(ctx, client.SolveRequest{
 		Definition: def.ToPB(),
 	})
+
+	img := specs.Image{
+		Config: specs.ImageConfig{
+			Env:        st.Env(),
+			Entrypoint: st.GetArgs(),
+			WorkingDir: st.GetDir(),
+		},
+	}
+
+	config, err := json.Marshal(img)
+	if err != nil {
+		return nil, err
+	}
+
+	res.AddMeta(exptypes.ExporterImageConfigKey, config)
+	return res, nil
 }
